@@ -18,7 +18,27 @@ const add = async ({ username, password }) => {
 
 const findBy = (filter) => {
   console.log(filter);
-  return db("users as u").select("u.*").where(filter);
+  return db("users as u").where(filter);
+};
+
+//middleware for login
+
+const checkUsernameExists = async (req, res, next) => {
+  console.log("hi im in checkusername", req.body.username);
+  try {
+    const rows = await findBy({ username: req.body.username });
+    if (rows.length) {
+      req.userData = rows[0];
+      // console.log("I got the right row!", req.userData);
+      next();
+    } else {
+      res.status(401).json({
+        message: "Invalid credentials",
+      });
+    }
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
 };
 
 router.post("/register", async (req, res) => {
@@ -87,7 +107,7 @@ const makeToken = (user) => {
 //   res.end("lol im dummy!");
 // });
 
-router.post("/login", async (req, res) => {
+router.post("/login", checkUsernameExists, async (req, res) => {
   // res.end("implement login, please!");
   /*
     IMPLEMENT
@@ -114,6 +134,9 @@ router.post("/login", async (req, res) => {
   */
 
   const { username, password } = req.body;
+  if (!username || !password) {
+    res.status(401).json({ message: "username and password required" });
+  }
   findBy({ username }).then(([user]) => {
     if (user && bcrypt.compareSync(password, user.password)) {
       const token = makeToken(user);
