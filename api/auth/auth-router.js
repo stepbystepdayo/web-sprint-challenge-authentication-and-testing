@@ -62,7 +62,7 @@ router.post("/register", async (req, res) => {
 
   user.password = hash;
   // console.log(user.password);
-  add(user)
+  await add(user)
     .then((saved) => {
       // console.log("This is saved", saved);
       res.status(201).json(saved);
@@ -98,7 +98,7 @@ router.post("/login", checkUsernameExists, async (req, res) => {
   if (!username || !password) {
     res.status(401).json({ message: "username and password required" });
   }
-  findBy({ username }).then(([user]) => {
+  await findBy({ username }).then(([user]) => {
     if (user && bcrypt.compareSync(password, user.password)) {
       const token = makeToken(user);
       res.status(200).json({
