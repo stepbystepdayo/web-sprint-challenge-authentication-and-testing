@@ -25,7 +25,23 @@ const checkUsernameExists = async (req, res, next) => {
   }
 };
 
-router.post("/register", async (req, res) => {
+const checkUsernameRegister = async (req, res, next) => {
+  // console.log("hi im in checkusernameRegister", req.body.username);
+  try {
+    const rows = await findBy({ username: req.body.username });
+    if (rows.length) {
+      res.status(401).json({
+        message: "username taken",
+      });
+    } else {
+      next();
+    }
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+router.post("/register", checkUsernameRegister, async (req, res) => {
   // res.end("implement register, please!");
   /*
     IMPLEMENT
