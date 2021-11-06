@@ -4,22 +4,7 @@ const db = require("../../data/dbConfig");
 const { jwtSecret } = require("./secret");
 const jwt = require("jsonwebtoken");
 
-const findById = async (id) => {
-  // console.log("i am in findBy", id);
-  return await db("users").where("id", id).orderBy("id");
-};
-
-const add = async ({ username, password }) => {
-  // console.log("i am in add functrion", username, password);
-  const [id] = await db("users").insert({ username, password });
-  // console.log("before the findBy", id);
-  return findById(id);
-};
-
-const findBy = (filter) => {
-  console.log(filter);
-  return db("users as u").where(filter);
-};
+const { findBy, findById, add } = require("./auth-model");
 
 //middleware for login
 
@@ -71,8 +56,6 @@ router.post("/register", async (req, res) => {
   let user = req.body;
   // console.log(user);
   // console.log("this is user:", user);
-  // res.end("hehehehhehe boddyyyyy onara");
-
   const rounds = process.env.BCRYPT_ROUNDS || 8;
 
   const hash = bcrypt.hashSync(user.password, rounds);
@@ -81,7 +64,7 @@ router.post("/register", async (req, res) => {
   // console.log(user.password);
   add(user)
     .then((saved) => {
-      console.log(saved);
+      // console.log("This is saved", saved);
       res.status(201).json(saved);
     })
     .catch((err) => {
@@ -89,50 +72,28 @@ router.post("/register", async (req, res) => {
     });
 });
 
-const makeToken = (user) => {
-  const options = {
-    expiresIn: "1d",
-  };
-  // console.log(options);
-  const payload = {
-    subject: user.user_id,
-    username: user.username,
-    role_name: user.role_name,
-  };
-  // console.log(payload);
-  return jwt.sign(payload, jwtSecret, options);
-};
-
-// router.get("/register", (req, res) => {
-//   res.end("lol im dummy!");
-// });
-
 router.post("/login", checkUsernameExists, async (req, res) => {
   // res.end("implement login, please!");
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
-
     1- In order to log into an existing account the client must provide `username` and `password`:
       {
         "username": "Captain Marvel",
         "password": "foobar"
       }
-
     2- On SUCCESSFUL login,
       the response body should have `message` and `token`:
       {
         "message": "welcome, Captain Marvel",
         "token": "eyJhbGciOiJIUzI ... ETC ... vUPjZYDSa46Nwz8"
       }
-
     3- On FAILED login due to `username` or `password` missing from the request body,
       the response body should include a string exactly as follows: "username and password required".
 
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
-
   const { username, password } = req.body;
   if (!username || !password) {
     res.status(401).json({ message: "username and password required" });
@@ -149,5 +110,19 @@ router.post("/login", checkUsernameExists, async (req, res) => {
     }
   });
 });
+
+const makeToken = (user) => {
+  const options = {
+    expiresIn: "750 ms",
+  };
+  // console.log(options);
+  const payload = {
+    subject: user.user_id,
+    username: user.username,
+    role_name: user.role_name,
+  };
+  // console.log(payload);
+  return jwt.sign(payload, jwtSecret, options);
+};
 
 module.exports = router;
