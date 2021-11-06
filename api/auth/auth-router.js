@@ -41,9 +41,23 @@ const checkUsernameRegister = async (req, res, next) => {
   }
 };
 
-router.post("/register", checkUsernameRegister, async (req, res) => {
-  // res.end("implement register, please!");
-  /*
+const checkPayload = async (req, res, next) => {
+  const { username, password } = req.body;
+  if (!username || !password || (!username && !password)) {
+    res.status(401).json({ message: "username and password required" });
+  } else {
+    next();
+  }
+};
+
+router.post(
+  "/register",
+  checkPayload,
+  checkUsernameRegister,
+
+  async (req, res) => {
+    // res.end("implement register, please!");
+    /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
     DO NOT EXCEED 2^8 ROUNDS OF HASHING!
@@ -68,26 +82,27 @@ router.post("/register", checkUsernameRegister, async (req, res) => {
     4- On FAILED registration due to the `username` being taken,
       the response body should include a string exactly as follows: "username taken".
   */
-  let user = req.body;
-  // console.log(user);
-  // console.log("this is user:", user);
-  const rounds = process.env.BCRYPT_ROUNDS || 8;
+    let user = req.body;
+    // console.log(user);
+    // console.log("this is user:", user);
+    const rounds = process.env.BCRYPT_ROUNDS || 8;
 
-  const hash = bcrypt.hashSync(user.password, rounds);
+    const hash = bcrypt.hashSync(user.password, rounds);
 
-  user.password = hash;
-  // console.log(user.password);
-  await add(user)
-    .then((saved) => {
-      // console.log("This is saved", saved);
-      res.status(201).json(saved);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-});
+    user.password = hash;
+    // console.log(user.password);
+    await add(user)
+      .then((saved) => {
+        // console.log("This is saved", saved);
+        res.status(201).json(saved);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+);
 
-router.post("/login", checkUsernameExists, async (req, res) => {
+router.post("/login", checkUsernameExists, checkPayload, async (req, res) => {
   // res.end("implement login, please!");
   /*
     IMPLEMENT
@@ -109,10 +124,7 @@ router.post("/login", checkUsernameExists, async (req, res) => {
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
-  const { username, password } = req.body;
-  if (!username || !password) {
-    res.status(401).json({ message: "username and password required" });
-  }
+
   await findBy({ username }).then(([user]) => {
     if (user && bcrypt.compareSync(password, user.password)) {
       const token = makeToken(user);
