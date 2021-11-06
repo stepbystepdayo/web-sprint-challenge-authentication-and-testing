@@ -102,7 +102,7 @@ router.post(
   }
 );
 
-router.post("/login", checkUsernameExists, checkPayload, async (req, res) => {
+router.post("/login", checkPayload, checkUsernameExists, async (req, res) => {
   // res.end("implement login, please!");
   /*
     IMPLEMENT
@@ -124,6 +124,8 @@ router.post("/login", checkUsernameExists, checkPayload, async (req, res) => {
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
+
+  const { username, password } = req.body;
 
   await findBy({ username }).then(([user]) => {
     if (user && bcrypt.compareSync(password, user.password)) {
