@@ -1,7 +1,28 @@
-const router = require('express').Router();
+const router = require("express").Router();
+const bcrypt = require("bcrypt");
+const db = require("../../data/dbConfig");
+const { jwtSecret } = require("./secret");
+const jwt = require("jsonwebtoken");
 
-router.post('/register', (req, res) => {
-  res.end('implement register, please!');
+const findById = async (id) => {
+  // console.log("i am in findBy", id);
+  return await db("users").where("id", id).orderBy("id");
+};
+
+const add = async ({ username, password }) => {
+  // console.log("i am in add functrion", username, password);
+  const [id] = await db("users").insert({ username, password });
+  // console.log("before the findBy", id);
+  return findById(id);
+};
+
+const findBy = (filter) => {
+  console.log(filter);
+  return db("users as u").select("u.*").where(filter);
+};
+
+router.post("/register", async (req, res) => {
+  // res.end("implement register, please!");
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -27,10 +48,47 @@ router.post('/register', (req, res) => {
     4- On FAILED registration due to the `username` being taken,
       the response body should include a string exactly as follows: "username taken".
   */
+  let user = req.body;
+  // console.log(user);
+  // console.log("this is user:", user);
+  // res.end("hehehehhehe boddyyyyy onara");
+
+  const rounds = process.env.BCRYPT_ROUNDS || 8;
+
+  const hash = bcrypt.hashSync(user.password, rounds);
+
+  user.password = hash;
+  // console.log(user.password);
+  add(user)
+    .then((saved) => {
+      console.log(saved);
+      res.status(201).json(saved);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
-router.post('/login', (req, res) => {
-  res.end('implement login, please!');
+const makeToken = (user) => {
+  const options = {
+    expiresIn: "1d",
+  };
+  // console.log(options);
+  const payload = {
+    subject: user.user_id,
+    username: user.username,
+    role_name: user.role_name,
+  };
+  // console.log(payload);
+  return jwt.sign(payload, jwtSecret, options);
+};
+
+// router.get("/register", (req, res) => {
+//   res.end("lol im dummy!");
+// });
+
+router.post("/login", async (req, res) => {
+  // res.end("implement login, please!");
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -54,6 +112,19 @@ router.post('/login', (req, res) => {
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
+
+  const { username, password } = req.body;
+  findBy({ username }).then(([user]) => {
+    if (user && bcrypt.compareSync(password, user.password)) {
+      const token = makeToken(user);
+      res.status(200).json({
+        message: `welcome, ${user.username} `,
+        token,
+      });
+    } else {
+      res.status(401).json({ message: "invalid credentials" });
+    }
+  });
 });
 
 module.exports = router;
