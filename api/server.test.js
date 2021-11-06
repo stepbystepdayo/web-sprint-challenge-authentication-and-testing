@@ -15,6 +15,10 @@ afterAll(async () => {
   await db.destroy();
 });
 
+it("should be able to launch three browsers simultaneously", async () => {
+  jest.setTimeout(30000);
+});
+
 test("sanity", () => {
   expect(true).toBe(true);
 });
