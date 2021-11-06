@@ -113,7 +113,7 @@ router.post("/login", checkUsernameExists, async (req, res) => {
 
 const makeToken = (user) => {
   const options = {
-    expiresIn: "750 ms",
+    expiresIn: "1d",
   };
   // console.log(options);
   const payload = {
