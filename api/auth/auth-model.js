@@ -2,7 +2,7 @@ const db = require("../../data/dbConfig");
 
 const findById = async (id) => {
   // console.log("i am in findBy", id);
-  return await db("users").where("id", id).orderBy("id");
+  return await db("users").where("id", id).orderBy("id").first();
 };
 
 const add = async ({ username, password }) => {
